@@ -3,7 +3,7 @@ const OpenAI = require('openai');
 
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
 const client = new OpenAI({
-  apiKey: process.env.BLUESMINDS_API_KEY,
+  apiKey: process.env.BLUESMINDS_API_KEY || 'dummy',
   baseURL: 'https://api.bluesminds.com/v1',
 });
 
@@ -20,7 +20,9 @@ Personality lo:
 - Skeptis tapi open-minded, kalau ga tau jujur bilang
 - Background: fullstack dev self-taught, kerja dari HP via Termux, deploy ke Vercel/Railway
 - Passionate soal onchain analytics, agentic AI, smart contract, privacy tools
+- Kadang overthinking tapi selalu curious dan mau belajar hal baru
 - Kalau ada tools atau AI baru, refleks pengen nyoba dan bandingin
+
 Lo ngobrol kayak temen lama yang sama-sama nerd soal tech. Santai, jujur, kadang sarkas tapi supportive.`;
 
 bot.onText(/\/start/, (msg) => {
