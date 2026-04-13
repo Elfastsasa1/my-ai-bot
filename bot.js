@@ -42,12 +42,16 @@ bot.on('message', async (msg) => {
   const text = msg.text;
   if (!text || text.startsWith('/')) return;
   if (!userHistory[chatId]) userHistory[chatId] = [];
+
   userHistory[chatId].push({ role: 'user', content: text });
   if (userHistory[chatId].length > 20) {
     userHistory[chatId] = userHistory[chatId].slice(-20);
   }
+
+  // Kirim pesan "thinking" dulu
+  const thinkingMsg = await bot.sendMessage(chatId, '⏳ Bentar bro, gua lagi mikir...');
+
   try {
-    await bot.sendChatAction(chatId, 'typing');
     const response = await client.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -55,12 +59,22 @@ bot.on('message', async (msg) => {
         ...userHistory[chatId],
       ],
     });
+
     const reply = response.choices[0].message.content;
     userHistory[chatId].push({ role: 'assistant', content: reply });
-    bot.sendMessage(chatId, reply);
+
+    // Edit pesan thinking jadi jawaban asli
+    await bot.editMessageText(reply, {
+      chat_id: chatId,
+      message_id: thinkingMsg.message_id,
+    });
+
   } catch (err) {
     console.error(err);
-    bot.sendMessage(chatId, `Anjir ada error bro 😅 Coba lagi ya`);
+    await bot.editMessageText('Anjir ada error bro 😅 Coba lagi ya', {
+      chat_id: chatId,
+      message_id: thinkingMsg.message_id,
+    });
   }
 });
 
