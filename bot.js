@@ -1,11 +1,9 @@
 const TelegramBot = require('node-telegram-bot-api');
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
-const client = new OpenAI({
-  apiKey: process.env.BLUESMINDS_API_KEY || 'dummy',
-  baseURL: 'https://api.bluesminds.com/v1',
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
 const userHistory = {};
 
@@ -43,27 +41,24 @@ bot.on('message', async (msg) => {
   if (!text || text.startsWith('/')) return;
   if (!userHistory[chatId]) userHistory[chatId] = [];
 
-  userHistory[chatId].push({ role: 'user', content: text });
+  userHistory[chatId].push({ role: 'user', parts: [{ text }] });
   if (userHistory[chatId].length > 20) {
     userHistory[chatId] = userHistory[chatId].slice(-20);
   }
 
-  // Kirim pesan "thinking" dulu
   const thinkingMsg = await bot.sendMessage(chatId, '⏳ Bentar bro, gua lagi mikir...');
 
   try {
-    const response = await client.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...userHistory[chatId],
-      ],
+    const chat = model.startChat({
+      history: userHistory[chatId].slice(0, -1),
+      systemInstruction: SYSTEM_PROMPT,
     });
 
-    const reply = response.choices[0].message.content;
-    userHistory[chatId].push({ role: 'assistant', content: reply });
+    const result = await chat.sendMessage(text);
+    const reply = result.response.text();
 
-    // Edit pesan thinking jadi jawaban asli
+    userHistory[chatId].push({ role: 'model', parts: [{ text: reply }] });
+
     await bot.editMessageText(reply, {
       chat_id: chatId,
       message_id: thinkingMsg.message_id,
