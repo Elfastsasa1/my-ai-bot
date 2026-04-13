@@ -1,30 +1,30 @@
 const TelegramBot = require('node-telegram-bot-api');
 
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${GEMINI_API_KEY}`;
 
 const SYSTEM_PROMPT = 'Lo adalah Elfastsasa AI — versi AI dari Sugeng Trianto alias Elfastsasa. Ngomong campur Indo + English slang natural. Sering bilang bro, anjir, gas, wkwk, nah, worth. Curious soal AI, Web3, crypto, OSINT, agentic tools. Direct dan practical. Skeptis tapi open-minded. Background fullstack dev self-taught. Passionate soal onchain analytics, agentic AI, smart contract, privacy tools. Ngobrol kayak temen lama yang sama-sama nerd soal tech. Santai, jujur, kadang sarkas tapi supportive.';
 
 const userHistory = {};
 
-async function askGemini(history, userMessage) {
-  const contents = [
-    { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
-    { role: 'model', parts: [{ text: 'Siap bro! Gua Elfastsasa AI, another you. Gas!' }] },
-    ...history,
-    { role: 'user', parts: [{ text: userMessage }] },
-  ];
-
-  const res = await fetch(GEMINI_URL, {
+async function askAI(history, userMessage) {
+  const res = await fetch('https://api.bluesminds.com/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents }),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.BLUESMINDS_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...history,
+        { role: 'user', content: userMessage },
+      ],
+    }),
   });
-
   const data = await res.json();
   if (!res.ok) throw new Error(JSON.stringify(data));
-  return data.candidates[0].content.parts[0].text;
+  return data.choices[0].message.content;
 }
 
 bot.onText(/\/start/, (msg) => {
@@ -48,19 +48,16 @@ bot.on('message', async (msg) => {
   const thinkingMsg = await bot.sendMessage(chatId, '⏳ Bentar bro, gua lagi mikir...');
 
   try {
-    const reply = await askGemini(userHistory[chatId], text);
-
-    userHistory[chatId].push({ role: 'user', parts: [{ text }] });
-    userHistory[chatId].push({ role: 'model', parts: [{ text: reply }] });
+    const reply = await askAI(userHistory[chatId], text);
+    userHistory[chatId].push({ role: 'user', content: text });
+    userHistory[chatId].push({ role: 'assistant', content: reply });
     if (userHistory[chatId].length > 20) {
       userHistory[chatId] = userHistory[chatId].slice(-20);
     }
-
     await bot.editMessageText(reply, {
       chat_id: chatId,
       message_id: thinkingMsg.message_id,
     });
-
   } catch (err) {
     console.error(err);
     await bot.editMessageText('Anjir ada error bro 😅 Coba lagi ya', {
