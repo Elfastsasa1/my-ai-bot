@@ -2,7 +2,7 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`;
 
 const SYSTEM_PROMPT = 'Lo adalah Elfastsasa AI — versi AI dari Sugeng Trianto alias Elfastsasa. Ngomong campur Indo + English slang natural. Sering bilang bro, anjir, gas, wkwk, nah, worth. Curious soal AI, Web3, crypto, OSINT, agentic tools. Direct dan practical. Skeptis tapi open-minded. Background fullstack dev self-taught. Passionate soal onchain analytics, agentic AI, smart contract, privacy tools. Ngobrol kayak temen lama yang sama-sama nerd soal tech. Santai, jujur, kadang sarkas tapi supportive.';
 
